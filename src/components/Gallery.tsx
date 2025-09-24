@@ -12,10 +12,10 @@ type Item = {
 
 const GALLERY: Item[] = [
   { id: 1, image: '/galeria/foto1.png', title: 'Texto sobre a foto',  category: 'Drinks',        description: 'Texto Explicativo' },
-  { id: 2, image: '/galeria/foto2.JPG', title: 'Mixologia Moderna', category: 'Drinks',     description: 'Drink autoral com técnicas moleculares' },
+  { id: 2, image: '/galeria/foto2.jpg', title: 'Mixologia Moderna', category: 'Drinks',     description: 'Drink autoral com técnicas moleculares' },
   { id: 3, image: '/galeria/foto3.jpg', title: 'Texto sobre a foto', category: 'Drinks',   description: 'Texto Explicativo' },
-  { id: 4, image: '/galeria/foto4.JPG', title: 'Casamento dos Sonhos', category: 'Eventos',     description: 'Bar personalizado para casamento' },
-  { id: 5, image: '/galeria/foto5.JPG', title: 'Evento Corporativo', category: 'Eventos',      description: 'Open bar para empresa' },
+  { id: 4, image: '/galeria/foto4.jpg', title: 'Casamento dos Sonhos', category: 'Eventos',     description: 'Bar personalizado para casamento' },
+  { id: 5, image: '/galeria/foto5.jpg', title: 'Evento Corporativo', category: 'Eventos',      description: 'Open bar para empresa' },
   { id: 6, image: '/galeria/foto8.jpg',  title: 'Ingredientes Premium', category: 'Ingredientes', description: 'Seleção de destilados especiais' },
   { id: 7, image: '/galeria/foto7.jpg', title: 'Processo de layout',     category: 'Processo',      description: 'Processo de criação' },
   { id: 8, image: '/galeria/foto6.jpg', title: 'Drinks Autorais',   category: 'Criações',     description: 'Criações exclusivas da casa' }

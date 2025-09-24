@@ -57,7 +57,7 @@ const Hero: React.FC = () => {
         <div className="flex flex-col items-center">
           {/* Logo grande */}
           <img
-            src="Public/images/logo/logopng.PNG"
+            src="Public/images/logo/logopng.png"
             alt={BRAND.name}
             decoding="async"
             loading="eager"
