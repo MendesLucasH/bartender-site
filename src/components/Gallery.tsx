@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ZoomIn, ExternalLink } from 'lucide-react'
 
@@ -8,20 +8,147 @@ type Item = {
   title: string
   category: string
   description: string
+  w?: number
+  h?: number
 }
 
+/* ========= Helper de imagens =========
+   Usa Netlify Image CDN somente quando estiver hospedado no Netlify.
+   Em dev/local ou outro host, usa a imagem original do /public. */
+const USE_NETLIFY =
+  typeof window !== 'undefined' &&
+  (location.hostname.endsWith('netlify.app') || location.hostname.includes('netlify'))
+
+const imgCDN = (url: string, w: number, fm = 'webp', q = 70) => {
+  if (!USE_NETLIFY) return url // fora do Netlify, retorna a imagem original
+  return `/.netlify/images?url=${encodeURIComponent(url)}&w=${w}&q=${q}&fm=${fm}&fit=cover&auto=compress`
+}
+
+// tamanhos das thumbs (srcset)
+const THUMB_WIDTHS = [360, 540, 720, 960]
+// largura do full para lightbox
+const FULL_W = 1600
+
 const GALLERY: Item[] = [
-  { id: 1, image: '/galeria/foto1.png', title: 'Texto sobre a foto',  category: 'Drinks',        description: 'Texto Explicativo' },
-  { id: 2, image: '/galeria/foto2.jpg', title: 'Mixologia Moderna', category: 'Drinks',     description: 'Drink autoral com técnicas moleculares' },
-  { id: 3, image: '/galeria/foto3.jpg', title: 'Texto sobre a foto', category: 'Drinks',   description: 'Texto Explicativo' },
-  { id: 4, image: '/galeria/foto4.jpg', title: 'Casamento dos Sonhos', category: 'Eventos',     description: 'Bar personalizado para casamento' },
-  { id: 5, image: '/galeria/foto5.jpg', title: 'Evento Corporativo', category: 'Eventos',      description: 'Open bar para empresa' },
-  { id: 6, image: '/galeria/foto8.jpg',  title: 'Ingredientes Premium', category: 'Ingredientes', description: 'Seleção de destilados especiais' },
-  { id: 7, image: '/galeria/foto7.jpg', title: 'Processo de layout',     category: 'Processo',      description: 'Processo de criação' },
-  { id: 8, image: '/galeria/foto6.jpg', title: 'Drinks Autorais',   category: 'Criações',     description: 'Criações exclusivas da casa' }
+  { id: 1, image: '/galeria/foto1.png', title: 'Texto sobre a foto',  category: 'Drinks',        description: 'Texto Explicativo', w: 1600, h: 1200 },
+  { id: 2, image: '/galeria/foto2.jpg', title: 'Mixologia Moderna',   category: 'Drinks',        description: 'Drink autoral com técnicas moleculares', w: 1600, h: 1200 },
+  { id: 3, image: '/galeria/foto3.jpg', title: 'Texto sobre a foto',  category: 'Drinks',        description: 'Texto Explicativo', w: 1600, h: 1200 },
+  { id: 4, image: '/galeria/foto4.jpg', title: 'Casamento dos Sonhos',category: 'Eventos',       description: 'Bar personalizado para casamento', w: 1600, h: 1200 },
+  { id: 5, image: '/galeria/foto5.jpg', title: 'Evento Corporativo',  category: 'Eventos',       description: 'Open bar para empresa', w: 1600, h: 1200 },
+  { id: 6, image: '/galeria/foto8.jpg', title: 'Ingredientes Premium',category: 'Ingredientes',  description: 'Seleção de destilados especiais', w: 1600, h: 1200 },
+  { id: 7, image: '/galeria/foto7.jpg', title: 'Processo de layout',  category: 'Processo',      description: 'Processo de criação', w: 1600, h: 1200 },
+  { id: 8, image: '/galeria/foto6.jpg', title: 'Drinks Autorais',     category: 'Criações',      description: 'Criações exclusivas da casa', w: 1600, h: 1200 }
 ]
 
 const CATEGORIES = ['Todos', 'Drinks', 'Criações', 'Eventos', 'Processo', 'Ingredientes'] as const
+
+/* ========= LazyImage com LQIP + IO ========= */
+const LazyImage: React.FC<{
+  item: Item
+  index: number
+  className?: string
+  onHoverPrefetch?: (src: string) => void
+  onClick?: () => void
+}> = ({ item, index, className, onHoverPrefetch, onClick }) => {
+  const ref = useRef<HTMLImageElement | null>(null)
+  const [inView, setInView] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  const lqip = imgCDN(item.image, 24, 'webp', 30)
+  const webpSrcSet = THUMB_WIDTHS.map(w => `${imgCDN(item.image, w, 'webp', 72)} ${w}w`).join(', ')
+  const fallbackSrcSet = THUMB_WIDTHS.map(w => `${imgCDN(item.image, w, 'jpg', 72)} ${w}w`).join(', ')
+  const sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw'
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            setInView(true)
+            io.disconnect()
+          }
+        })
+      },
+      { rootMargin: '300px' }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  const handleLoad = () => setLoaded(true)
+
+  return (
+    <div
+      className="relative aspect-[4/3] overflow-hidden rounded-2xl cursor-pointer group"
+      onMouseEnter={() => onHoverPrefetch?.(item.image)}
+      onClick={onClick}
+    >
+      {/* Blur do LQIP */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-500 ${loaded ? 'opacity-0' : 'opacity-100'}`}
+        style={{
+          backgroundImage: `url(${lqip})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(12px)',
+          transform: 'scale(1.06)'
+        }}
+        aria-hidden
+      />
+
+      {/* Imagem principal (CDN no Netlify / arquivo direto fora dele) */}
+      {USE_NETLIFY ? (
+        <picture>
+          {inView && <source type="image/webp" srcSet={webpSrcSet} sizes={sizes} />}
+          <img
+            ref={ref}
+            src={inView ? imgCDN(item.image, 720, 'jpg', 72) : lqip}
+            srcSet={inView ? fallbackSrcSet : undefined}
+            sizes={inView ? sizes : undefined}
+            alt={item.title}
+            width={item.w ?? 1600}
+            height={item.h ?? 1200}
+            loading={index < 2 ? 'eager' : 'lazy'}
+            fetchPriority={index < 2 ? ('high' as any) : ('auto' as any)}
+            decoding="async"
+            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03] ${className ?? ''}`}
+            onLoad={handleLoad}
+          />
+        </picture>
+      ) : (
+        <img
+          ref={ref}
+          src={item.image}
+          alt={item.title}
+          width={item.w ?? 1600}
+          height={item.h ?? 1200}
+          loading={index < 2 ? 'eager' : 'lazy'}
+          fetchPriority={index < 2 ? ('high' as any) : ('auto' as any)}
+          decoding="async"
+          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03] ${className ?? ''}`}
+          onLoad={handleLoad}
+        />
+      )}
+
+      {/* Overlay + texto */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 md:block" />
+      <div className="absolute inset-0 p-6 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+        <span className="inline-block px-3 py-1 bg-amber-400 text-black text-xs font-semibold rounded-full mb-2 self-start">
+          {item.category}
+        </span>
+        <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
+        <p className="text-gray-300 text-sm">{item.description}</p>
+      </div>
+
+      {/* Ícone zoom */}
+      <div className="absolute top-4 right-4 p-2 bg-white/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <ZoomIn className="w-5 h-5 text-white" />
+      </div>
+    </div>
+  )
+}
 
 const Gallery: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
@@ -32,9 +159,25 @@ const Gallery: React.FC = () => {
     [activeCategory]
   )
 
+  // Prefetch do full apenas em hover/abertura
+  const prefetchMap = useRef<Record<string, boolean>>({})
+  const prefetchFull = useCallback((src: string) => {
+    if (prefetchMap.current[src]) return
+    const img = new Image()
+    img.decoding = 'async'
+    img.src = imgCDN(src, FULL_W, 'webp', 78)
+    prefetchMap.current[src] = true
+  }, [])
+
+  // fechar no ESC
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelectedImage(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   return (
     <section id="gallery" className="relative py-32 overflow-hidden">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-900/10 to-black" />
 
       <div className="relative z-10 container mx-auto px-6">
@@ -55,7 +198,7 @@ const Gallery: React.FC = () => {
             Explore nosso portfólio de criações e eventos que marcaram história
           </p>
 
-          {/* Category Filter */}
+          {/* Filtros */}
           <div className="flex flex-wrap justify-center gap-4">
             {CATEGORIES.map((category) => (
               <button
@@ -73,9 +216,9 @@ const Gallery: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Grid com TAMANHO FIXO (4:3) e otimizações de pintura */}
+        {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 12 }}
@@ -83,125 +226,115 @@ const Gallery: React.FC = () => {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               whileHover={{ y: -4, scale: 1.01 }}
-              className="group relative overflow-hidden rounded-2xl cursor-pointer will-change-transform [content-visibility:auto] [contain-intrinsic-size:300px_225px]"
-              onClick={() => setSelectedImage(item.id)}
+              className="relative"
             >
-              <div className="relative aspect-[4/3]">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                />
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-                {/* Content */}
-                <div className="absolute inset-0 p-6 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
-                  <span className="inline-block px-3 py-1 bg-amber-400 text-black text-xs font-semibold rounded-full mb-2 self-start">
-                    {item.category}
-                  </span>
-                  <h3 className="text-white font-bold text-lg mb-2">{item.title}</h3>
-                  <p className="text-gray-300 text-sm">{item.description}</p>
-                </div>
-
-                {/* Zoom Icon */}
-                <div className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <ZoomIn className="w-5 h-5 text-white" />
-                </div>
-              </div>
+              <LazyImage
+                item={item}
+                index={idx}
+                onHoverPrefetch={prefetchFull}
+                onClick={() => setSelectedImage(item.id)}
+              />
             </motion.div>
           ))}
         </div>
 
         {/* Lightbox */}
-       <AnimatePresence>
-  {selectedImage && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={() => setSelectedImage(null)}
-      role="dialog" aria-modal="true"
-      onKeyDown={(e) => e.key === 'Escape' && setSelectedImage(null)}
-      tabIndex={-1}
-    >
-      <motion.div
-        initial={{ scale: 0.98, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.98, opacity: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="relative max-w-[90vw] md:max-w-5xl max-h-[90vh] flex flex-col items-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {(() => {
-          const item = GALLERY.find(g => g.id === selectedImage)
-          return item ? (
-            <>
-              {/* botão fechar */}
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute -top-2 -right-2 md:top-2 md:right-2 p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
-                aria-label="Fechar"
+        <AnimatePresence>
+          {selectedImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/90 md:bg-black/80 flex items-center justify-center p-4"
+              onClick={() => setSelectedImage(null)}
+              role="dialog" aria-modal="true"
+            >
+              <motion.div
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.98, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="relative max-w-[90vw] md:max-w-5xl max-h-[90vh] flex flex-col items-center"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-6 h-6" />
-              </button>
+                {(() => {
+                  const item = GALLERY.find(g => g.id === selectedImage)
+                  if (!item) return null
+                  const fullWebp = imgCDN(item.image, FULL_W, 'webp', 78)
+                  const fullJpg  = imgCDN(item.image, FULL_W, 'jpg', 78)
 
-              {/* imagem SEM CROP */}
-     <img
-  src={item.image}
-  alt={item.title}
-  className="w-[85vw] max-w-4xl h-[70vh] object-cover rounded-xl"
-  loading="eager"
-  decoding="async"
-/>
+                  return (
+                    <>
+                      <button
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute -top-2 -right-2 md:top-2 md:right-2 p-2 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
+                        aria-label="Fechar"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
 
+                      {USE_NETLIFY ? (
+                        <picture>
+                          <source type="image/webp" srcSet={fullWebp} />
+                          <img
+                            src={fullJpg}
+                            alt={item.title}
+                            className="w-[85vw] max-w-4xl h-[70vh] object-contain rounded-xl"
+                            width={item.w ?? 1600}
+                            height={item.h ?? 1200}
+                            loading="eager"
+                            decoding="async"
+                            fetchPriority="high"
+                          />
+                        </picture>
+                      ) : (
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-[85vw] max-w-4xl h-[70vh] object-contain rounded-xl"
+                          width={item.w ?? 1600}
+                          height={item.h ?? 1200}
+                          loading="eager"
+                          decoding="async"
+                          fetchPriority="high"
+                        />
+                      )}
 
-              {/* legenda fora da imagem (evita sobreposição) */}
-              <div className="w-full mt-4 md:mt-3 px-1 text-left">
-                <span className="inline-block px-3 py-1 bg-amber-400 text-black text-sm font-semibold rounded-full mb-2">
-                  {item.category}
-                </span>
-                <h3 className="text-white font-bold text-2xl mb-1">{item.title}</h3>
-                <p className="text-gray-300">{item.description}</p>
-              </div>
-            </>
-          ) : null
-        })()}
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
+                      <div className="w-full mt-4 md:mt-3 px-1 text-left">
+                        <span className="inline-block px-3 py-1 bg-amber-400 text-black text-sm font-semibold rounded-full mb-2">
+                          {item.category}
+                        </span>
+                        <h3 className="text-white font-bold text-2xl mb-1">{item.title}</h3>
+                        <p className="text-gray-300">{item.description}</p>
+                      </div>
+                    </>
+                  )
+                })()}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* CTA */}
-     <motion.div
-  initial={{ opacity: 0, y: 20 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true, amount: 0.2 }}
-  transition={{ duration: 0.25, ease: 'easeOut' }}
-  className="text-center mt-16"
->
-<a
-  href="https://www.instagram.com/phpbartenders/"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="px-12 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-full text-lg 
-             inline-flex items-center gap-3
-             transition-all duration-300 ease-out
-             hover:scale-105 hover:shadow-[0_0_25px_rgba(251,191,36,0.7)]"
->
-  Ver Mais Trabalhos
-  <ExternalLink className="w-5 h-5" />
-</a>
-
-
-
-</motion.div>
-
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="text-center mt-16"
+        >
+          <a
+            href="https://www.instagram.com/phpbartenders/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-12 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-full text-lg 
+                       inline-flex items-center gap-3 transition-all duration-300 ease-out
+                       hover:scale-105 hover:shadow-[0_0_25px_rgba(251,191,36,0.7)]"
+          >
+            Ver Mais Trabalhos
+            <ExternalLink className="w-5 h-5" />
+          </a>
+        </motion.div>
       </div>
     </section>
   )
