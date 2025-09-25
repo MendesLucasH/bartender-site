@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ZoomIn, ExternalLink } from 'lucide-react'
 
@@ -23,6 +23,33 @@ const GALLERY: Item[] = [
 
 const CATEGORIES = ['Todos', 'Drinks', 'Criações', 'Eventos', 'Processo', 'Ingredientes'] as const
 
+// ---- helper: requestIdleCallback polyfill (para navegadores que não têm) ----
+const ric: typeof window.requestIdleCallback = (cb => {
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    return window.requestIdleCallback.bind(window)
+  }
+  return (fn: IdleRequestCallback) => window.setTimeout(() => fn({ didTimeout: false, timeRemaining: () => 0 } as any), 1)
+})()
+
+// ---- Preloader: baixa todas as imagens “por trás” ----
+function usePreloadImages(urls: string[]) {
+  useEffect(() => {
+    let cancelled = false
+    const preload = () => {
+      urls.forEach((src) => {
+        const img = new Image()
+        img.decoding = 'async'
+        img.loading = 'eager'
+        img.src = src
+      })
+    }
+    // dá prioridade: começa já, e agenda outra rodada quando o navegador estiver ocioso
+    preload()
+    ric(() => { if (!cancelled) preload() })
+    return () => { cancelled = true }
+  }, [urls])
+}
+
 const Gallery: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState<(typeof CATEGORIES)[number]>('Todos')
@@ -31,6 +58,10 @@ const Gallery: React.FC = () => {
     () => (activeCategory === 'Todos' ? GALLERY : GALLERY.filter(i => i.category === activeCategory)),
     [activeCategory]
   )
+
+  // Pré-carrega TUDO da galeria (ou só os da categoria ativa — você escolhe).
+  // Se quiser apenas da categoria atual, troque GALLERY por items.
+  usePreloadImages(GALLERY.map(i => i.image))
 
   return (
     <section id="gallery" className="relative py-32 overflow-hidden">
@@ -75,7 +106,7 @@ const Gallery: React.FC = () => {
 
         {/* Grid com TAMANHO FIXO (4:3) e otimizações de pintura */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 12 }}
@@ -83,15 +114,18 @@ const Gallery: React.FC = () => {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               whileHover={{ y: -4, scale: 1.01 }}
-              className="group relative overflow-hidden rounded-2xl cursor-pointer will-change-transform [content-visibility:auto] [contain-intrinsic-size:300px_225px]"
+              className="group relative overflow-hidden rounded-2xl cursor-pointer will-change-transform  [contain-intrinsic-size:300px_225px]"
               onClick={() => setSelectedImage(item.id)}
             >
               <div className="relative aspect-[4/3]">
                 <img
                   src={item.image}
                   alt={item.title}
-                  loading="lazy"
+                  // primeiras 6 imagens com prioridade alta; resto lazy
+                  loading={idx < 6 ? 'eager' : 'lazy'}
                   decoding="async"
+                  // dica pro Chrome dar mais prioridade
+                  {...(idx < 6 ? { fetchpriority: 'high' as any } : {})}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                 />
 
@@ -117,91 +151,86 @@ const Gallery: React.FC = () => {
         </div>
 
         {/* Lightbox */}
-       <AnimatePresence>
-  {selectedImage && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={() => setSelectedImage(null)}
-      role="dialog" aria-modal="true"
-      onKeyDown={(e) => e.key === 'Escape' && setSelectedImage(null)}
-      tabIndex={-1}
-    >
-      <motion.div
-        initial={{ scale: 0.98, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.98, opacity: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="relative max-w-[90vw] md:max-w-5xl max-h-[90vh] flex flex-col items-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {(() => {
-          const item = GALLERY.find(g => g.id === selectedImage)
-          return item ? (
-            <>
-              {/* botão fechar */}
-              <button
-                onClick={() => setSelectedImage(null)}
-                className="absolute -top-2 -right-2 md:top-2 md:right-2 p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
-                aria-label="Fechar"
+        <AnimatePresence>
+          {selectedImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setSelectedImage(null)}
+              role="dialog" aria-modal="true"
+              onKeyDown={(e) => e.key === 'Escape' && setSelectedImage(null)}
+              tabIndex={-1}
+            >
+              <motion.div
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.98, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="relative max-w-[90vw] md:max-w-5xl max-h-[90vh] flex flex-col items-center"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-6 h-6" />
-              </button>
+                {(() => {
+                  const item = GALLERY.find(g => g.id === selectedImage)
+                  return item ? (
+                    <>
+                      {/* botão fechar */}
+                      <button
+                        onClick={() => setSelectedImage(null)}
+                        className="absolute -top-2 -right-2 md:top-2 md:right-2 p-2 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors"
+                        aria-label="Fechar"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
 
-              {/* imagem SEM CROP */}
-     <img
-  src={item.image}
-  alt={item.title}
-  className="w-[85vw] max-w-4xl h-[70vh] object-cover rounded-xl"
-  loading="eager"
-  decoding="async"
-/>
+                      {/* imagem SEM CROP */}
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-[85vw] max-w-4xl h-[70vh] object-cover rounded-xl"
+                        loading="eager"
+                        decoding="async"
+                        fetchpriority="high"
+                      />
 
-
-              {/* legenda fora da imagem (evita sobreposição) */}
-              <div className="w-full mt-4 md:mt-3 px-1 text-left">
-                <span className="inline-block px-3 py-1 bg-amber-400 text-black text-sm font-semibold rounded-full mb-2">
-                  {item.category}
-                </span>
-                <h3 className="text-white font-bold text-2xl mb-1">{item.title}</h3>
-                <p className="text-gray-300">{item.description}</p>
-              </div>
-            </>
-          ) : null
-        })()}
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
-
+                      {/* legenda fora da imagem */}
+                      <div className="w-full mt-4 md:mt-3 px-1 text-left">
+                        <span className="inline-block px-3 py-1 bg-amber-400 text-black text-sm font-semibold rounded-full mb-2">
+                          {item.category}
+                        </span>
+                        <h3 className="text-white font-bold text-2xl mb-1">{item.title}</h3>
+                        <p className="text-gray-300">{item.description}</p>
+                      </div>
+                    </>
+                  ) : null
+                })()}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* CTA */}
-     <motion.div
-  initial={{ opacity: 0, y: 20 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true, amount: 0.2 }}
-  transition={{ duration: 0.25, ease: 'easeOut' }}
-  className="text-center mt-16"
->
-<a
-  href="https://www.instagram.com/phpbartenders/"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="px-12 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-full text-lg 
-             inline-flex items-center gap-3
-             transition-all duration-300 ease-out
-             hover:scale-105 hover:shadow-[0_0_25px_rgba(251,191,36,0.7)]"
->
-  Ver Mais Trabalhos
-  <ExternalLink className="w-5 h-5" />
-</a>
-
-
-
-</motion.div>
-
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="text-center mt-16"
+        >
+          <a
+            href="https://www.instagram.com/phpbartenders/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-12 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-full text-lg 
+                       inline-flex items-center gap-3
+                       transition-all duration-300 ease-out
+                       hover:scale-105 hover:shadow-[0_0_25px_rgba(251,191,36,0.7)]"
+          >
+            Ver Mais Trabalhos
+            <ExternalLink className="w-5 h-5" />
+          </a>
+        </motion.div>
       </div>
     </section>
   )
