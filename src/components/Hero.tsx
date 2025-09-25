@@ -27,28 +27,25 @@ const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-black/60" />
       </motion.div> */}
       {/* Background VIDEO (parallax) */}
-      <motion.div style={{ y }} className="absolute inset-0 z-0 pointer-events-none">
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          poster="/Public/media/hero-poster.jpg" // opcional
-          aria-hidden="true"
-        >
-          {/* deixe o webm se tiver */}
-          {/* <source src="/Public/media/hero.webm" type="video/webm" /> */}
-          <source src="/Public/media/VideoFundo.mp4" type="video/mp4" />
-        </video>
+<motion.div style={{ y }} className="absolute inset-0 z-0 pointer-events-none">
+  <video
+    className="absolute inset-0 w-full h-full object-cover"
+    autoPlay
+    loop
+    muted
+    playsInline
+    preload="metadata"
+    poster="/media/hero-poster.jpg"
+    aria-hidden="true"
+  >
+    {/* Se tiver .webm, mantenha primeiro */}
+    {/* <source src="/media/hero.webm" type="video/webm" /> */}
+    <source src="/media/VideoFundo.mp4" type="video/mp4" />
+  </video>
 
-        {/* overlay para contraste */}
-<div className="absolute inset-0 bg-black/85 z-10" />
+  <div className="absolute inset-0 bg-black/85 z-10" />
+</motion.div>
 
-
-
-      </motion.div>
 
 
       {/* Content */}
@@ -57,7 +54,7 @@ const Hero: React.FC = () => {
         <div className="flex flex-col items-center">
           {/* Logo grande */}
           <img
-            src="Public/images/logo/logopng.png"
+            src="/images/logo/logopng.png"
             alt={BRAND.name}
             decoding="async"
             loading="eager"

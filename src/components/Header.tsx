@@ -22,7 +22,7 @@ const Header: React.FC = () => {
   ]
 
   // Caminho público do Vite: tudo que está em /Public é servido na raiz.
-  const LOGO_SRC = 'Public/images/logo/logopng.png' // troque para '/images/logo/logo.svg' se usar SVG
+  const LOGO_SRC = '/images/logo/logopng.png' // começa com / // troque para '/images/logo/logo.svg' se usar SVG
 
   return (
     <motion.header
