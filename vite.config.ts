@@ -1,4 +1,3 @@
-
 import react from '@vitejs/plugin-react-swc'
 import { defineConfig, UserConfig } from 'vite'
 
@@ -29,6 +28,7 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       exclude: ['lucide-react'],
     },
+    publicDir: 'Public', // <- aqui está o ajuste: usa sua pasta "Public/"
+    // base: '/', // (opcional) deixe assim se o site está na raiz do domínio
   }
 })
-
