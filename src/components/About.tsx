@@ -1,7 +1,7 @@
 
 import React from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import {Award, BookOpen, Heart, Star} from 'lucide-react'
+import { Award, BookOpen, Heart, Star } from 'lucide-react'
 
 const About = () => {
   const { scrollY } = useScroll()
@@ -11,8 +11,8 @@ const About = () => {
   const achievements = [
     {
       icon: Award,
-      title: 'Certificação Internacional',
-      description: 'Formado pela International Bartenders Association'
+      title: 'Certificação',
+      description: 'Cada drink é estudado e pensado'
     },
     {
       icon: BookOpen,
@@ -27,7 +27,7 @@ const About = () => {
     {
       icon: Star,
       title: 'Reconhecimento',
-      description: 'Premiado em competições nacionais'
+      description: 'Reconhecido e bem avaliado pelos nossos clientes'
     }
   ]
 
@@ -39,10 +39,10 @@ const About = () => {
         className="absolute inset-0 z-0"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900" />
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center opacity-10"
           style={{
-            backgroundImage: `url('https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg')`
+            backgroundImage: "url('/images/backgroundsobre.jpg')" 
           }}
         />
       </motion.div>
@@ -87,7 +87,7 @@ const About = () => {
               viewport={{ once: true }}
               className="text-lg text-gray-300 mb-8 leading-relaxed"
             >
-              Com mais de 15 anos de experiência, transformo ingredientes simples em experiências 
+              Com mais de 15 anos de experiência, transformo ingredientes simples em experiências
               extraordinárias. Cada drink conta uma história, cada sabor desperta uma emoção.
             </motion.p>
 
@@ -98,8 +98,8 @@ const About = () => {
               viewport={{ once: true }}
               className="text-lg text-gray-300 mb-12 leading-relaxed"
             >
-              Minha paixão é criar momentos únicos através da combinação perfeita de técnica, 
-              criatividade e ingredientes premium. Do clássico ao inovador, cada criação é 
+              Minha paixão é criar momentos únicos através da combinação perfeita de técnica,
+              criatividade e ingredientes premium. Do clássico ao inovador, cada criação é
               pensada para surpreender e encantar.
             </motion.p>
 
@@ -140,14 +140,15 @@ const About = () => {
               <motion.img
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.6 }}
-                src="https://images.pexels.com/photos/1170412/pexels-photo-1170412.jpeg"
+                src="/images/fotosobre.jpg"   // <- usa o caminho dentro de /public
                 alt="Bartender profissional"
                 className="w-full h-[600px] object-cover"
               />
-              
+
+
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              
+
               {/* Floating quote */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -178,7 +179,7 @@ const About = () => {
               }}
               className="absolute -top-8 -right-8 w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full opacity-70"
             />
-            
+
             <motion.div
               animate={{
                 y: [0, 15, 0],

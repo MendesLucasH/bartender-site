@@ -1,45 +1,47 @@
-
 import React from 'react'
 import { motion } from 'framer-motion'
-import {Users, Heart, Building, Sparkles, Clock, MapPin, CheckCircle, Star} from 'lucide-react'
+import { Users, Heart, Building, Sparkles, Clock, MapPin, CheckCircle, Star } from 'lucide-react'
 
 const Services = () => {
+  // número em formato internacional: 55 + DDD + número (sem +, (), -, espaço)
+  const WHATSAPP = '5519997508975'
+
   const services = [
     {
       icon: Heart,
       title: 'Casamentos',
       description: 'Drinks especiais para o dia mais importante da sua vida',
       features: ['Bar personalizado', 'Drinks autorais', 'Decoração temática', 'Equipe completa'],
-      price: 'A partir de R$ 2.500',
       image: 'https://images.pexels.com/photos/1024960/pexels-photo-1024960.jpeg',
-      gradient: 'from-pink-500 to-rose-500'
+      gradient: 'from-pink-500 to-rose-500',
+      message: 'Olá! Gostaria de um orçamento para um CASAMENTO.'
     },
     {
       icon: Building,
       title: 'Eventos Corporativos',
       description: 'Impressione seus clientes e colaboradores',
       features: ['Open bar premium', 'Networking drinks', 'Apresentação profissional', 'Logística completa'],
-      price: 'A partir de R$ 3.000',
       image: 'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg',
-      gradient: 'from-blue-500 to-cyan-500'
+      gradient: 'from-blue-500 to-cyan-500',
+      message: 'Olá! Gostaria de um orçamento para um EVENTO CORPORATIVO.'
     },
     {
       icon: Users,
       title: 'Festas Privadas',
       description: 'Celebre com estilo e sofisticação',
       features: ['Menu personalizado', 'Drinks exclusivos', 'Animação interativa', 'Setup completo'],
-      price: 'A partir de R$ 1.800',
       image: 'https://images.pexels.com/photos/1267696/pexels-photo-1267696.jpeg',
-      gradient: 'from-purple-500 to-indigo-500'
+      gradient: 'from-purple-500 to-indigo-500',
+      message: 'Olá! Gostaria de contratar o bar para uma FESTA PRIVADA.'
     },
     {
       icon: Sparkles,
       title: 'Eventos Especiais',
       description: 'Aniversários, formaturas e comemorações',
       features: ['Tematização única', 'Show de drinks', 'Drinks instagramáveis', 'Experiência memorável'],
-      price: 'A partir de R$ 2.000',
       image: 'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg',
-      gradient: 'from-amber-500 to-orange-500'
+      gradient: 'from-amber-500 to-orange-500',
+      message: 'Olá! Gostaria de um orçamento para um EVENTO ESPECIAL (aniversário, formatura etc.).'
     }
   ]
 
@@ -50,11 +52,14 @@ const Services = () => {
     { icon: Star, title: 'Satisfação Garantida', description: '100% de aprovação dos clientes' }
   ]
 
+  const waLink = (text: string) =>
+    `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`
+
   return (
     <section id="services" className="relative py-32 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900" />
-      
+
       <div className="relative z-10 container mx-auto px-6">
         {/* Header */}
         <motion.div
@@ -77,7 +82,7 @@ const Services = () => {
               Serviços
             </span>
           </motion.h2>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -85,7 +90,7 @@ const Services = () => {
             viewport={{ once: true }}
             className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
           >
-            Oferecemos experiências únicas em mixologia para todos os tipos de eventos, 
+            Oferecemos experiências únicas em mixologia para todos os tipos de eventos,
             sempre com a excelência que você merece
           </motion.p>
         </motion.div>
@@ -104,8 +109,8 @@ const Services = () => {
             >
               {/* Background Image */}
               <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500">
-                <img 
-                  src={service.image} 
+                <img
+                  src={service.image}
                   alt={service.title}
                   className="w-full h-full object-cover"
                 />
@@ -147,16 +152,20 @@ const Services = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-amber-400">
-                    {service.price}
+                    {/* {service.price} */}
                   </span>
-                  
-                  <motion.button
+
+                  {/* Link do WhatsApp */}
+                  <motion.a
+                    href={waLink(service.message)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-semibold rounded-full hover:shadow-lg hover:shadow-amber-400/30 transition-all duration-300"
                   >
                     Solicitar
-                  </motion.button>
+                  </motion.a>
                 </div>
               </div>
 
@@ -197,7 +206,7 @@ const Services = () => {
               >
                 <service.icon className="w-6 h-6 text-black" />
               </motion.div>
-              
+
               <h3 className="text-white font-semibold mb-2">{service.title}</h3>
               <p className="text-gray-400 text-sm">{service.description}</p>
             </motion.div>
@@ -212,13 +221,16 @@ const Services = () => {
           viewport={{ once: true }}
           className="text-center mt-16"
         >
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(245, 158, 11, 0.3)" }}
+          <motion.a
+            href={waLink('Olá! Gostaria de um orçamento PERSONALIZADO.')}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(245, 158, 11, 0.3)' }}
             whileTap={{ scale: 0.95 }}
             className="px-12 py-4 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-full text-lg hover:shadow-2xl transition-all duration-300"
           >
             Solicitar Orçamento Personalizado
-          </motion.button>
+          </motion.a>
         </motion.div>
       </div>
     </section>

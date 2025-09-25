@@ -106,36 +106,35 @@ const Footer: React.FC = () => {
                 viewport={{ once: true }}
                 className="flex items-center space-x-2 text-gray-400"
               >
-                <span>© {year} {BRAND.name}. Feito com</span>
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                  <Heart className="w-4 h-4 text-red-500 fill-current" />
-                </motion.div>
-                <span>em {BRAND.city}</span>
+                <span>© {year} {BRAND.name}. Feito em</span>      
+                <span>{BRAND.city}</span>
               </motion.div>
-
               {/* Social Links */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="flex items-center space-x-4"
-              >
-                {socialLinks.map((social) => (
-                  <motion.a
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={social.label}
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="bg-white/5 p-3 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-all duration-300"
-                  >
-                    <social.icon className="w-5 h-5" />
-                  </motion.a>
-                ))}
-              </motion.div>
+{/*
+  <motion.div
+    initial={{ opacity: 0 }}
+    whileInView={{ opacity: 1 }}
+    transition={{ duration: 0.6, delay: 0.2 }}
+    viewport={{ once: true }}
+    className="flex items-center space-x-4"
+  >
+    {socialLinks.map((social) => (
+      <motion.a
+        key={social.label}
+        href={social.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={social.label}
+        whileHover={{ scale: 1.1, y: -2 }}
+        whileTap={{ scale: 0.9 }}
+        className="bg-white/5 p-3 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-all duration-300"
+      >
+        <social.icon className="w-5 h-5" />
+      </motion.a>
+    ))}
+  </motion.div>
+*/}
+
 
               {/* Back to Top */}
               <motion.button
