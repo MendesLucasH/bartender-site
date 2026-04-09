@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fundo hero com imagem fixa */
+.bg-hero {
+  background-image: url('https://images.pexels.com/photos/616836/pexels-photo-616836.jpeg');
+}
+
+@keyframes floatY {
+  0% { transform: translateY(0) }
+  50% { transform: translateY(-28px) }
+  100% { transform: translateY(0) }
+}
+@keyframes pulse {
+  0%,100% { opacity: .25 }
+  50% { opacity: .7 }
+}
+/* bolinha laranja com glow */
+.dot {
+  background: radial-gradient(circle at 30% 30%, rgba(245,158,11,0.95), rgba(245,158,11,0.25) 60%, rgba(245,158,11,0) 70%);
+  filter: blur(0.4px);
+  border-radius: 9999px;
+  will-change: transform, opacity;
+}
